@@ -1,6 +1,6 @@
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { CreateUserRequest } from './dto/create-user.request';
+import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from '@prisma/client';
 
@@ -8,12 +8,16 @@ import { User } from '@prisma/client';
 export class UsersService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async createUser(data: CreateUserRequest): Promise<Omit<User, 'password'>> {
+  async createUser(
+    createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'password'>> {
     try {
-      return await this.prismaService.user.create({
+      await this.checkIfEmailExists(createUserDto);
+
+      return this.prismaService.user.create({
         data: {
-          ...data,
-          password: await bcrypt.hash(data.password, 10),
+          ...createUserDto,
+          password: await bcrypt.hash(createUserDto.password, 10),
         },
         select: {
           id: true,
@@ -21,10 +25,17 @@ export class UsersService {
         },
       });
     } catch (error) {
-      if (error.code == 'P2002') {
-        throw new UnprocessableEntityException('Email already exists.');
-      }
       throw error;
+    }
+  }
+
+  private async checkIfEmailExists(createUserDto: CreateUserDto) {
+    const user = await this.prismaService.user.findUnique({
+      where: { email: createUserDto.email },
+    });
+
+    if (user) {
+      throw new UnprocessableEntityException('Email already exists.');
     }
   }
 }
