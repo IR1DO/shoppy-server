@@ -38,6 +38,14 @@ export class ProductsController {
     return this.productsService.getProducts();
   }
 
+  // FIXME This route will auto save file from request before route
+  // actually runs (whenever it's file type, since we don't apply
+  // frontend validation).
+  // However, if the file is not match the pipe
+  // option inside @UploadedFile, which means file is too big or in
+  // wrong type, the route method will not be run. You can see this
+  // since the console log is not printed when file does not match the
+  // decorator pipe option
   @Post(':productId/image')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
@@ -64,6 +72,6 @@ export class ProductsController {
     )
     _file: Express.Multer.File,
   ) {
-    console.log(_file);
+    console.log('Received file: ', _file);
   }
 }
