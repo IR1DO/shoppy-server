@@ -11,22 +11,18 @@ export class UsersService {
   async createUser(
     createUserDto: CreateUserDto,
   ): Promise<Omit<User, 'password'>> {
-    try {
-      await this.checkIfEmailExists(createUserDto);
+    await this.checkIfEmailExists(createUserDto);
 
-      return this.prismaService.user.create({
-        data: {
-          ...createUserDto,
-          password: await bcrypt.hash(createUserDto.password, 10),
-        },
-        select: {
-          id: true,
-          email: true,
-        },
-      });
-    } catch (error) {
-      throw error;
-    }
+    return this.prismaService.user.create({
+      data: {
+        ...createUserDto,
+        password: await bcrypt.hash(createUserDto.password, 10),
+      },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
   }
 
   private async checkIfEmailExists(createUserDto: CreateUserDto) {
