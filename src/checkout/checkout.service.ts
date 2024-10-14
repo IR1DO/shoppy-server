@@ -18,6 +18,9 @@ export class CheckoutService {
     // that we can utilize on the Next.js UI to redirect the user
     // based off of the session ID that gets returned here.
     return this.stripe.checkout.sessions.create({
+      metadata: {
+        productId,
+      },
       line_items: [
         {
           price_data: {
@@ -34,6 +37,20 @@ export class CheckoutService {
       mode: 'payment',
       success_url: this.configService.getOrThrow('STRIPE_SUCCESS_URL'),
       cancel_url: this.configService.getOrThrow('STRIPE_CANCEL_URL'),
+    });
+  }
+
+  async handleCheckoutWebhook(event: any) {
+    if (event.type !== 'checkout.session.completed') {
+      return;
+    }
+
+    const session = await this.stripe.checkout.sessions.retrieve(
+      event.data.object.id,
+    );
+
+    await this.productService.update(+session.metadata.productId, {
+      sold: true,
     });
   }
 }
