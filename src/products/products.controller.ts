@@ -18,9 +18,6 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { ProductsService } from './products.service';
 import { TokenPayload } from 'src/auth/token-payload.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { PRODUCT_IMAGES } from './product-images';
 
 @Controller('products')
 export class ProductsController {
@@ -51,19 +48,7 @@ export class ProductsController {
   // decorator pipe option
   @Post(':productId/image')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: PRODUCT_IMAGES,
-        filename: (req, file, callback) => {
-          callback(
-            null,
-            `${req.params.productId}${extname(file.originalname)}`,
-          );
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('image'))
   uploadProductImage(
     @UploadedFile(
       new ParseFilePipe({
@@ -73,9 +58,10 @@ export class ProductsController {
         ],
       }),
     )
-    _file: Express.Multer.File,
+    file: Express.Multer.File,
+    @Param('productId') productId: string,
   ) {
-    console.log('Received file: ', _file);
+    return this.productsService.uploadProductImage(productId, file.buffer);
   }
 
   @Get(':productId')
